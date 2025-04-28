@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-text</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .toggle-btn {
+            background-color: #2ecc71;
+            color: white;
+            width: 150px;
+        }
+        .toggle-btn.listening {
+            background-color: #e74c3c;
+        }
+        .toggle-btn:hover {
+            background-color: #27ae60;
+        }
+        .toggle-btn.listening:hover {
+            background-color: #c0392b;
+        }
+        .clear-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        .clear-btn:hover {
+            background-color: #2980b9;
+        }
+        .save-btn {
+            background-color: #9b59b6;
+            color: white;
+        }
+        .save-btn:hover {
+            background-color: #8e44ad;
+        }
+        .status {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 20px;
+            height: 24px;
+            color: #7f8c8d;
+        }
+        .listening-status {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .success {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        .output-container {
+            position: relative;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f1c40f;
+            color: #333;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .copy-btn:hover {
+            background-color: #f39c12;
+        }
+        #output {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            background-color: #f9f9f9;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .secondary-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        .pulse {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+            animation: pulse 1.5s infinite;
+            margin-right: 5px;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+            }
+        }
+        .transcription-list {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .transcription-list h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .transcription-item {
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+        .transcription-date {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .transcription-content {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .hidden {
+            display: none;
+        }
+        .settings-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .settings-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        .setting-group {
+            margin-bottom: 15px;
+        }
+        .setting-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Speech to text converter</h1>
+        
+        <div id="status" class="status">Ready to listen. Click "Start" below.</div>
+        
+        <div class="output-container">
+            <button id="copyBtn" class="copy-btn">Copy Text</button>
+            <textarea id="output" placeholder="Your speech will appear here..." readonly></textarea>
+        </div>
+        
+        <div class="button-container">
+            <button id="toggleBtn" class="toggle-btn">Start</button>
+            <div class="secondary-buttons">
+                <button id="clearBtn" class="clear-btn">Clear Text</button>
+                <button id="saveBtn" class="save-btn">Save Transcription</button>
+            </div>
+        </div>
+        
+        <div class="settings-container">
+            <div class="settings-title">Advanced Settings</div>
+            
+            <div class="setting-group">
+                <label class="setting-label" for="languageSelect">Recognition Language:</label>
+                <select id="languageSelect">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <option value="de-DE">German</option>
+                    <option value="kn-IN">Kannada</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">
+                    <input type="checkbox" id="punctuationToggle" checked> Smart Punctuation
+                </label>
+            </div>
+        </div>
+        
+        <div class="info">
+            <p>This application uses your browser's Speech Recognition API. For best results, use Chrome or Edge.</p>
+        </div>
+
+        <div id="transcriptionList" class="transcription-list hidden">
+            <h2>Saved Transcriptions</h2>
+            <div id="transcriptionItems"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('toggleBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            const transcriptionList = document.getElementById('transcriptionList');
+            const transcriptionItems = document.getElementById('transcriptionItems');
+            const languageSelect = document.getElementById('languageSelect');
+            const punctuationToggle = document.getElementById('punctuationToggle');
+            
+            let recognition = null;
+            let finalTranscript = '';
+            let isListening = false;
+            
+            // New variables to help manage better pause detection
+            let lastTranscriptEndsWithPeriod = false;
+            let isCurrentlyReceivingSpeech = false;
+            let sentenceCompletionTimer = null;
+            let pauseTimer = null;
+            let lastResultTime = Date.now();
+            const PAUSE_THRESHOLD = 5000; 
+
+            // Improved Punctuation Processing Function
+            function processPunctuation(text, isFinal) {
+                if (!punctuationToggle.checked) return text;
+                
+                let processedText = text;
+                
+                // More sophisticated pause and continuation detection
+                if (isFinal) {
+                    // Update our speech activity tracker
+                    isCurrentlyReceivingSpeech = true;
+                    lastResultTime = Date.now();
+                    
+                    // Clear existing pause timer if any
+                    if (pauseTimer) {
+                        clearTimeout(pauseTimer);
+                    }
+                    
+                    // Sophisticated pause detection
+                    pauseTimer = setTimeout(() => {
+                        isCurrentlyReceivingSpeech = false;
+                        
+                        // Add ellipsis to indicate a pause/continuation, not a full stop
+                        if (!lastTranscriptEndsWithEllipsis) {
+                            // Only add ellipsis if there's actual content
+                            if (finalTranscript.trim().length > 0) {
+                                finalTranscript = finalTranscript.trim() + ' ... ';
+                                lastTranscriptEndsWithEllipsis = true;
+                                output.value = finalTranscript;
+                            }
+                        }
+                    }, PAUSE_THRESHOLD);
+                    
+                    // Words that typically indicate an incomplete thought or ongoing sentence
+                    const continuationWords = [
+                        'and', 'but', 'because', 'so', 'however', 'therefore', 'moreover', 
+                        'furthermore', 'additionally', 'also', 'then', 'while', 'although', 
+                        'since', 'as', 'when', 'where', 'that', 'which', 'who', 'whom'
+                    ];
+                    
+                    // Words that might end a thought
+                    const sentenceEndingWords = [
+                        'said', 'think', 'believe', 'know', 'understand', 
+                        'concluded', 'explained', 'mentioned'
+                    ];
+                    
+                    const words = processedText.trim().split(/\s+/);
+                    const lastWord = words.length > 0 ? words[words.length - 1].toLowerCase() : '';
+                    const wordCount = words.length;
+                    
+                    // Determine if this looks like a continuing thought
+                    const isContinuingThought = 
+                        continuationWords.includes(lastWord) || 
+                        wordCount < 6 || 
+                        !sentenceEndingWords.some(word => words.includes(word));
+                    
+                    // More nuanced approach to punctuation
+                    if (isContinuingThought) {
+                        // If it seems like a continuation, use ellipsis instead of period
+                        processedText = processedText.trim() + ' ';
+                        
+                        // If no timer exists, set one to potentially add an ellipsis later
+                        if (!sentenceCompletionTimer) {
+                            sentenceCompletionTimer = setTimeout(() => {
+                                if (!isCurrentlyReceivingSpeech && 
+                                    (Date.now() - lastResultTime) > PAUSE_THRESHOLD) {
+                                    
+                                    // Add ellipsis if the last part doesn't already have ending punctuation
+                                    const lastCharOfFinal = finalTranscript.trim().slice(-1);
+                                    if (!/[.!?;]/.test(lastCharOfFinal)) {
+                                        finalTranscript = finalTranscript.trim() + ' ... ';
+                                        lastTranscriptEndsWithEllipsis = true;
+                                        output.value = finalTranscript;
+                                    }
+                                }
+                                sentenceCompletionTimer = null;
+                            }, PAUSE_THRESHOLD);
+                        }
+                    } else {
+                        // If it seems like a complete thought, add a period
+                        processedText = processedText.trim() + '. ';
+                    }
+                }
+                
+                return processedText;
+            }
+            
+            // Modify the script to include a new variable for tracking ellipsis
+            let lastTranscriptEndsWithEllipsis = false;
+            
+            // Rest of the script remains the same as in the previous implementation
+            // (Previous code for recognition setup, event listeners, etc.)
+            
+            // Check browser support
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                status.textContent = 'Speech recognition is not supported in this browser. Try Chrome or Edge.';
+                status.classList.add('error');
+                toggleBtn.disabled = true;
+                return;
+            }
+            
+            // Initialize speech recognition
+            function setupRecognition() {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.maxAlternatives = 3;
+                recognition.lang = languageSelect.value;
+                
+                let interimTranscript = '';
+                
+                recognition.onstart = () => {
+                    isListening = true;
+                    isCurrentlyReceivingSpeech = false;  // Reset speech detection
+                    status.innerHTML = '<span class="pulse"></span><span class="listening-status">Listening...</span>';
+                    toggleBtn.textContent = 'Stop';
+                    toggleBtn.classList.add('listening');
+                };
+                
+                recognition.onresult = (event) => {
+                    interimTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        
+                        if (event.results[i].isFinal) {
+                            // Apply smart punctuation for final results
+                            const processedTranscript = processPunctuation(transcript, true);
+                            finalTranscript += processedTranscript + ' ';  // Add space instead of period
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    output.value = finalTranscript + interimTranscript;
+                    // Auto scroll to bottom
+                    output.scrollTop = output.scrollHeight;
+                };
+                
+                recognition.onend = () => {
+                    if (isListening) {
+                        // If we're supposed to be listening but recognition ended, restart it
+                        recognition.start();
+                    } else {
+                        status.textContent = 'Stopped listening.';
+                        status.classList.remove('listening-status');
+                        toggleBtn.textContent = 'Start';
+                        toggleBtn.classList.remove('listening');
+                        
+                        // When we completely stop listening, finalize any pending punctuation
+                        if (sentenceCompletionTimer) {
+                            clearTimeout(sentenceCompletionTimer);
+                            sentenceCompletionTimer = null;
+                        }
+                        
+                        // Do a final cleanup of the transcript 
+                        // (remove double spaces, ensure proper sentence endings)
+                        finalTranscript = finalTranscript.replace(/\s{2,}/g, ' ').trim();
+                        
+                        // If the transcript doesn't end with punctuation, add an ellipsis
+                        const lastChar = finalTranscript.slice(-1);
+                        if (finalTranscript.length > 0 && !/[.!?;]/.test(lastChar)) {
+                            finalTranscript += ' ... ';
+                        }
+                        
+                        output.value = finalTranscript;
+                    }
+                };
+                
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    
+                    if (event.error === 'no-speech') {
+                        status.textContent = 'No speech detected. Try again.';
+                    } else if (event.error === 'audio-capture') {
+                        status.textContent = 'No microphone detected. Check your microphone settings.';
+                        status.classList.add('error');
+                    } else if (event.error === 'not-allowed') {
+                        status.textContent = 'Microphone access denied. Please allow microphone access.';
+                        status.classList.add('error');
+                    } else {
+                        status.textContent = `Error: ${event.error}. Try restarting the application.`;
+                        status.classList.add('error');
+                    }
+                    
+                    isListening = false;
+                    toggleBtn.textContent = 'Start';
+                    toggleBtn.classList.remove('listening');
+                };
+            }
+            
+            // Toggle button event listener
+            toggleBtn.addEventListener('click', () => {
+                if (!recognition) {
+                    setupRecognition();
+                }
+                
+                if (!isListening) {
+                    finalTranscript = '';
+                    output.value = '';
+                    recognition.start();
+                } else {
+                    isListening = false;
+                    recognition.stop();
+                }
+            });
+            
+            // Copy button event listener
+            copyBtn.addEventListener('click', () => {
+                output.select();
+                document.execCommand('copy');
+                status.textContent = 'Text copied to clipboard!';
+                status.classList.add('success');
+                setTimeout(() => {
+                    status.textContent = 'Ready to listen. Click "Start" below.';
+                    status.classList.remove('success');
+                }, 2000);
+            });
+            
+            // Clear button event listener
+            clearBtn.addEventListener('click', () => {
+                finalTranscript = '';
+                output.value = '';
+                status.textContent = 'Text cleared. Ready to listen again.';
+                status.classList.remove('listening-status', 'error', 'success');
+                lastTranscriptEndsWithEllipsis = false;
+                
+                // Clear any pending timers
+                if (sentenceCompletionTimer) {
+                    clearTimeout(sentenceCompletionTimer);
+                    sentenceCompletionTimer = null;
+                }
+                
+                if (pauseTimer) {
+                    clearTimeout(pauseTimer);
+                    pauseTimer = null;
+                }
+            });
+            
+            // Save transcription function (placeholder, replace with actual server endpoint)
+            // Modify the save button event listener
+saveBtn.addEventListener('click', () => {
+    if (!output.value) {
+        status.textContent = 'Nothing to save. Record some speech first.';
+        status.classList.add('error');
+        return;
+    }
+    
+    // Send transcription to backend
+    fetch('/api/save-transcription', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            transcription: output.value,
+            language: languageSelect.value
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            status.textContent = 'Transcription saved successfully!';
+            status.classList.add('success');
+            
+            // Refresh transcription list
+            fetchTranscriptions();
+        } else {
+            status.textContent = data.message;
+            status.classList.add('error');
+        }
+        
+        // Reset status after 2 seconds
+        setTimeout(() => {
+            status.textContent = 'Ready to listen. Click "Start" below.';
+            status.classList.remove('success', 'error');
+        }, 2000);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        status.textContent = 'Failed to save transcription.';
+        status.classList.add('error');
+    });
+});
+function fetchTranscriptions() {
+    fetch('/api/transcriptions')
+    .then(response => response.json())
+    .then(data => {
+        const transcriptionList = document.getElementById('transcriptionList');
+        const transcriptionItems = document.getElementById('transcriptionItems');
+        
+        if (data.success && data.transcriptions.length > 0) {
+            transcriptionList.classList.remove('hidden');
+            transcriptionItems.innerHTML = ''; // Clear existing items
+            
+            data.transcriptions.forEach(transcription => {
+                const transcriptionDiv = document.createElement('div');
+                transcriptionDiv.classList.add('transcription-item');
+                
+                const dateDiv = document.createElement('div');
+                dateDiv.classList.add('transcription-date');
+                dateDiv.textContent = `${transcription.date} (${transcription.language})`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.classList.add('transcription-content');
+                contentDiv.textContent = transcription.content;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.addEventListener('click', () => {
+                    fetch(`/api/delete-transcription/${transcription.filename}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            transcriptionDiv.remove();
+                            
+                            // Hide list if no transcriptions remain
+                            if (transcriptionItems.children.length === 0) {
+                                transcriptionList.classList.add('hidden');
+                            }
+                        }
+                    });
+                });
+                
+                transcriptionDiv.appendChild(dateDiv);
+                transcriptionDiv.appendChild(contentDiv);
+                transcriptionDiv.appendChild(deleteBtn);
+                
+                transcriptionItems.appendChild(transcriptionDiv);
+            });
+        } else {
+            transcriptionList.classList.add('hidden');
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching transcriptions:', error);
+    });
+}
+
+// Call fetchTranscriptions when the page loads
+document.addEventListener('DOMContentLoaded', fetchTranscriptions);
+            // Language select event
+            languageSelect.addEventListener('change', () => {
+                if (isListening) {
+                    // Stop the current recognition
+                    isListening = false;
+                    recognition.stop();
+                    
+                    // Start a new one with the new language
+                    setTimeout(() => {
+                        setupRecognition();
+                        recognition.start();
+                        isListening = true;
+                    }, 200);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
